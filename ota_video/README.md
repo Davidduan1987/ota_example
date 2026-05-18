@@ -4,12 +4,6 @@
 
 录屏内容包括：
 
-- 在 iOS 环境下使用 `nRF Connect` APP 进行 DFU；
-- 在 iOS 环境下使用 `nRF Device Manager` APP 进行 DFU。
+- `NRF_CONNECT.mp4`：在 iOS 环境下使用 `nRF Connect` APP 进行 DFU 的录屏。
+- `Device_manager.mp4`：在 iOS 环境下使用 `nRF Device Manager` APP 进行 DFU 的录屏。
 
-建议视频文件名：
-
-```text
-nrf_connect_ios_dfu.mp4
-nrf_device_manager_ios_dfu.mp4
-```
