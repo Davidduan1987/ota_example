@@ -1,13 +1,13 @@
-# OTA DFU Videos
+# OTA DFU 录屏
 
-This folder is used for iOS Bluetooth DFU screen recordings.
+本文件夹用于存放 iOS 环境下的蓝牙 DFU 录屏。
 
-The videos in this folder demonstrate DFU using:
+录屏内容包括：
 
-- `nRF Connect` app on iOS
-- `nRF Device Manager` app on iOS
+- 在 iOS 环境下使用 `nRF Connect` APP 进行 DFU；
+- 在 iOS 环境下使用 `nRF Device Manager` APP 进行 DFU。
 
-Recommended file names:
+建议视频文件名：
 
 ```text
 nrf_connect_ios_dfu.mp4

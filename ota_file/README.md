@@ -1,17 +1,17 @@
-# OTA Firmware File
+# OTA 固件文件
 
-This folder contains the OTA firmware package built from the current `lbs_OTA` project.
+本文件夹用于存放当前 `lbs_OTA` 工程生成的 OTA 固件包。
 
-Current firmware version:
+当前固件版本：
 
 ```text
 1.1.0+0
 ```
 
-OTA package:
+OTA 固件包：
 
 ```text
 dfu_application_1.1.0.zip
 ```
 
-Use this file with `nRF Connect` or `nRF Device Manager` for Bluetooth DFU.
+该固件包可用于 `nRF Connect` 或 `nRF Device Manager` APP 的蓝牙 DFU 测试。

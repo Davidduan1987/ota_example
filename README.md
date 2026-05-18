@@ -1,15 +1,15 @@
-# nRF Connect SDK 3.3.0 Bluetooth OTA Example
+# nRF Connect SDK 3.3.0 蓝牙 OTA 示例
 
-This branch contains the OTA deliverables and customer instructions for the `lbs_OTA` example based on nRF Connect SDK 3.3.0.
+本分支用于存放基于 nRF Connect SDK 3.3.0 的 `lbs_OTA` 示例工程 OTA 文件和客户使用说明。
 
-## Contents
+## 目录说明
 
-- `ota_file/`: OTA firmware package. The package in this folder is built from the current project and its firmware version is `1.1.0`.
-- `ota_video/`: DFU screen recordings. The videos in this folder are recorded on iOS using the `nRF Connect` and `nRF Device Manager` apps.
+- `ota_file/`：OTA 固件包。该文件夹中存放的是当前工程的新固件，固件版本号为 `1.1.0`。
+- `ota_video/`：DFU 录屏文件。该文件夹中的视频是在 iOS 环境下，分别使用 `nRF Connect` 和 `nRF Device Manager` APP 进行 DFU 的录屏。
 
-## Firmware Version
+## 固件版本
 
-The firmware version is controlled by the `VERSION` file in the application project:
+固件版本由应用工程根目录下的 `VERSION` 文件控制：
 
 ```text
 VERSION_MAJOR = 1
@@ -19,24 +19,24 @@ VERSION_TWEAK = 0
 EXTRAVERSION =
 ```
 
-This produces firmware version `1.1.0+0`.
+以上配置生成的固件版本为 `1.1.0+0`。
 
-The same version is used by:
+该版本会同时用于：
 
-- the runtime firmware log printed by the application;
-- the MCUboot signed image version;
-- the OTA DFU package metadata.
+- 应用启动时打印的运行时固件版本；
+- MCUboot 签名镜像中的固件版本；
+- OTA DFU 包中的版本信息。
 
-## How To Modify The Firmware Version
+## 如何修改固件版本号
 
-To release a new OTA firmware version, edit the project `VERSION` file:
+如果客户需要发布新的 OTA 固件版本，只需要修改工程根目录下的 `VERSION` 文件：
 
-- Change `VERSION_MAJOR` for a major release.
-- Change `VERSION_MINOR` for a minor feature release.
-- Change `PATCHLEVEL` for a bug fix release.
-- Change `VERSION_TWEAK` for build or internal revision updates.
+- `VERSION_MAJOR`：主版本号，通常用于不兼容或较大的功能升级。
+- `VERSION_MINOR`：次版本号，通常用于新增功能。
+- `PATCHLEVEL`：补丁版本号，通常用于问题修复。
+- `VERSION_TWEAK`：内部构建号或小版本修订号。
 
-For example, to upgrade from `1.1.0+0` to `1.2.0+0`:
+例如，如果要把固件从 `1.1.0+0` 升级到 `1.2.0+0`，可以修改为：
 
 ```text
 VERSION_MAJOR = 1
@@ -46,29 +46,29 @@ VERSION_TWEAK = 0
 EXTRAVERSION =
 ```
 
-After changing the version, rebuild the project with a pristine build. The generated `dfu_application.zip` will contain the new signed firmware version.
+修改完成后，需要重新执行 pristine build。重新生成的 `dfu_application.zip` 中会自动带上新的签名固件版本。
 
-## OTA File
+## OTA 固件文件
 
-Use the file in `ota_file/` for Bluetooth DFU testing.
+请使用 `ota_file/` 文件夹中的文件进行蓝牙 DFU 测试。
 
-Current OTA package:
+当前 OTA 固件包：
 
 ```text
 ota_file/dfu_application_1.1.0.zip
 ```
 
-Firmware version:
+当前固件版本：
 
 ```text
 1.1.0+0
 ```
 
-## iOS DFU Test Videos
+## iOS DFU 测试视频
 
-The `ota_video/` folder is reserved for iOS DFU recordings:
+`ota_video/` 文件夹用于存放 iOS 环境下的 DFU 录屏：
 
-- `nRF Connect` app DFU recording
-- `nRF Device Manager` app DFU recording
+- 使用 `nRF Connect` APP 进行 DFU 的录屏；
+- 使用 `nRF Device Manager` APP 进行 DFU 的录屏。
 
-These videos demonstrate the Bluetooth OTA update procedure in an iOS environment.
+这些视频用于向客户展示在 iOS 环境下进行蓝牙 OTA 升级的完整流程。
