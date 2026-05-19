@@ -8,6 +8,7 @@
 - `prj.conf`：应用镜像配置，启用 BLE、LBS、DK library 和 MCUmgr Bluetooth OTA。
 - `sysbuild.conf`：启用 sysbuild 下的 MCUboot。
 - `sysbuild/mcuboot/prj.conf`：MCUboot 子镜像配置域，只影响 bootloader，不影响应用镜像。
+- `pm_static.yml`：固定 Partition Manager memory layout，包含 MCUboot、primary/secondary slot、settings 和 SRAM 布局。
 - `VERSION`：应用固件版本号。
 - `新固件/dfu_application.zip`：已生成的新固件包，可直接用于手机端 OTA 升级测试。
 
@@ -57,6 +58,21 @@ EXTRAVERSION =
 ```
 
 修改版本后建议删除旧 `build` 目录并重新构建，确保 `dfu_application.zip` 中的镜像版本是新版本。
+
+## pm_static.yml 节点说明
+
+当前工程使用 `pm_static.yml` 固定 Partition Manager 的 memory layout。各节点作用如下：
+
+- `mcuboot`：MCUboot bootloader 所在区域，设备复位后先从这里运行 bootloader。
+- `EMPTY_0`：`mcuboot` 和 primary slot 之间的填充区域，用于保持静态分区布局连续，避免 Partition Manager 识别出多个未定义 gap。
+- `mcuboot_pad`：MCUboot image header 预留区，位于 primary slot 开始处，应用实际代码从该区域之后开始。
+- `app`：应用程序实际链接和运行的 flash 区域。
+- `mcuboot_primary`：MCUboot primary slot，包含 `mcuboot_pad` 和 `app`，当前正在运行的应用镜像位于该 slot。
+- `mcuboot_primary_app`：primary slot 中不含 `mcuboot_pad` 的应用区域，对应应用本体。
+- `mcuboot_secondary`：MCUboot secondary slot，OTA 新固件下载后先写入该区域，再由 MCUboot 完成升级切换。
+- `EMPTY_1`：secondary slot 和 settings 区域之间的填充区域，用于固定 flash layout 并保持分区连续。
+- `settings_storage`：Zephyr settings/持久化存储区域，BLE bonding、MCUmgr/DFU 相关状态等可保存在这里。
+- `sram_primary`：ARM application core 使用的 SRAM 区域，当前配置为 `0x20000000-0x20040000`，即 256 KB。
 
 ## 构建命令
 
