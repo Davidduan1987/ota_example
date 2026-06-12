@@ -75,6 +75,25 @@ static void advertising_start(void)
 	k_work_submit(&adv_work);
 }
 
+static void request_ota_link_params(struct bt_conn *conn)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_USER_DATA_LEN_UPDATE)) {
+		err = bt_conn_le_data_len_update(conn, BT_LE_DATA_LEN_PARAM_MAX);
+		if (err) {
+			printk("LE data length update request failed (err %d)\n", err);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_USER_PHY_UPDATE)) {
+		err = bt_conn_le_phy_update(conn, BT_CONN_LE_PHY_PARAM_2M);
+		if (err) {
+			printk("LE 2M PHY update request failed (err %d)\n", err);
+		}
+	}
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
@@ -83,6 +102,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected\n");
+	request_ota_link_params(conn);
 
 	dk_set_led_on(CON_STATUS_LED);
 }

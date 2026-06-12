@@ -1,6 +1,8 @@
-# nRF Connect SDK 3.3.0 蓝牙 OTA 示例
+# nRF Connect SDK 3.3.1 蓝牙 OTA 示例
 
-本分支用于存放基于 nRF Connect SDK 3.3.0 的 `lbs_OTA` 示例工程、OTA 固件文件和客户使用说明。
+本 tag 用于存放基于 nRF Connect SDK 3.3.1 的 `lbs_OTA` 示例工程、OTA 固件文件和客户使用说明。
+
+> 注意：当前 NCS3.3.1 版本只在 `nrf54lm20dk/nrf54lm20b/cpuapp`，即 nRF54LM20B DK 上完成过构建和运行验证。
 
 ## 目录说明
 
@@ -11,6 +13,7 @@
 ## 当前工程说明
 
 `lbs_OTA/` 是基于 Nordic LBS 示例修改的蓝牙 OTA 工程，已加入 MCUboot 和 MCUmgr Bluetooth SMP OTA 支持。
+NCS3.3.1 版本新增了 nRF54LM20B DK 的 board overlay，并针对 Bluetooth SMP OTA 吞吐率做了配置优化。
 
 当前上传的工程源码版本为 `1.0.0+0`，对应 `lbs_OTA/VERSION`：
 
@@ -27,9 +30,29 @@ EXTRAVERSION =
 - `lbs_OTA/prj.conf` 中启用了 `CONFIG_BOOTLOADER_MCUBOOT`、`CONFIG_NCS_SAMPLE_MCUMGR_BT_OTA_DFU`、`CONFIG_NCS_SAMPLE_MCUMGR_BT_OTA_DFU_SPEEDUP`。
 - `lbs_OTA/sysbuild.conf` 中启用了 `SB_CONFIG_BOOTLOADER_MCUBOOT`。
 - `lbs_OTA/boards/nrf54l15dk_nrf54l15_cpuapp.overlay` 和 `lbs_OTA/sysbuild/mcuboot/app.overlay` 中调整了 nRF54L15DK 的 MCUboot 分区，避免 FPROTECT 分区过大导致编译失败。
+- `lbs_OTA/boards/nrf54lm20dk_nrf54lm20b_cpuapp.overlay` 中将 nRF54LM20B 上默认分配给 RISC-V FLPR 的 SRAM/RRAM 空间交还给 ARM cpuapp 使用。
 - `lbs_OTA/src/main.c` 中加入了 `#include <zephyr/app_version.h>`。
 - `lbs_OTA/src/main.c` 中使用 `APP_VERSION_EXTENDED_STRING` 打印当前固件版本。
+- `lbs_OTA/src/main.c` 中在 BLE 连接建立后主动请求 LE Data Length Update 和 2M PHY Update，用于提高 OTA 链路吞吐率。
 - 构建时会由 `VERSION` 文件自动生成 `CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION`，该值会写入 MCUboot 签名镜像和 OTA 包元数据。
+
+## OTA 传输速度优化
+
+NCS3.3.1 版本参考 Nordic SMP Server Bluetooth overlay 的高吞吐配置，在 `lbs_OTA/prj.conf` 中特别加入或显式设置了下面这些宏：
+
+- `CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL=y`：MCUmgr 检测到 SMP 传输时自动调整 BLE connection parameters。
+- `CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY=y`：开启 MCUmgr Bluetooth reassembly，允许更大的 SMP 包分片重组。
+- `CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE=2475`：把 MCUmgr netbuf 调大到可容纳 5 个最大 MTU 写命令组合的 SMP 包。
+- `CONFIG_BT_L2CAP_TX_MTU=498`：提高 L2CAP TX MTU，减少 OTA 数据分片开销。
+- `CONFIG_BT_BUF_ACL_RX_SIZE=502` 和 `CONFIG_BT_BUF_ACL_TX_SIZE=502`：匹配 498-byte MTU 的 ACL buffer 大小。
+- `CONFIG_BT_CTLR_DATA_LENGTH_MAX=251`：启用 BLE controller 最大 Data Length。
+- `CONFIG_BT_PHY_UPDATE=y`、`CONFIG_BT_CTLR_PHY_2M=y`、`CONFIG_BT_USER_PHY_UPDATE=y`：允许应用主动请求 2M PHY。
+- `CONFIG_BT_DATA_LEN_UPDATE=y`、`CONFIG_BT_USER_DATA_LEN_UPDATE=y`：允许应用主动请求最大 Data Length。
+- `CONFIG_BT_CTLR_LE_PING=n`：关闭 OTA 场景中不需要的 LE Ping controller 支持，减少资源占用。
+- `CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE=4608`：给 MCUmgr transport workqueue 留出足够栈空间。
+- `CONFIG_NCS_SAMPLE_MCUMGR_BT_OTA_DFU_VALIDATION=n`：关闭 NCS sample 对默认 247-byte MTU speedup 配置的 warning 校验；本工程使用的是 Nordic SMP Server overlay 中更大的 498-byte MTU 配置。
+
+实际吞吐率仍取决于手机或 PC central 是否接受 2M PHY、Data Length、连接间隔等协商结果。
 
 ## 固件版本机制
 
