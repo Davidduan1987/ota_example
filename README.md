@@ -1,16 +1,33 @@
-# nRF54L15 LBS OTA 示例（NCS 3.2.x）
+# nRF54L15 外部 Flash OTA 示例（NCS 3.2.x）
 
-本分支用于保存 nRF54L15 DK 上的 Bluetooth LBS + MCUboot OTA 示例工程，目标分支为 `NCS3.2.X`。
+本分支用于保存 nRF54L15 DK 上的 Bluetooth LBS + MCUboot OTA 示例工程。当前工程使用外部 SPI NOR flash 作为 MCUboot secondary slot，用于接收蓝牙 OTA 下载的新固件。
+
+本工程已在 NCS 3.2.3 环境中使用 nRF54L DK 测试。
 
 ## 工程内容
 
-- `src/main.c`：LBS 外设示例，包含蓝牙广播、LED、按键和固件版本打印。
-- `prj.conf`：应用镜像配置，启用 BLE、LBS、DK library 和 MCUmgr Bluetooth OTA。
-- `sysbuild.conf`：启用 sysbuild 下的 MCUboot。
-- `sysbuild/mcuboot/prj.conf`：MCUboot 子镜像配置域，只影响 bootloader，不影响应用镜像。
-- `pm_static.yml`：固定 Partition Manager memory layout，包含 MCUboot、primary/secondary slot、settings 和 SRAM 布局。
-- `VERSION`：应用固件版本号。
-- `新固件/dfu_application.zip`：已生成的新固件包，可直接用于手机端 OTA 升级测试。
+- `src/main.c`：外部 flash 读写测试、Bluetooth LBS 广播、BLE OTA，以及 Button0/Button1 低功耗控制逻辑。
+- `prj.conf`：应用镜像配置，启用 SPI NOR、flash map、BLE、LBS 和 MCUmgr Bluetooth OTA。
+- `sysbuild.conf`：启用 sysbuild 下的 MCUboot，并配置 external flash 作为 OTA secondary slot。
+- `sysbuild/mcuboot/prj.conf`：MCUboot 子镜像配置域，只影响 bootloader。
+- `boards/nrf54l15dk_nrf54l15_cpuapp.overlay`：启用 DK 板载外部 flash，并作为 Partition Manager external flash。
+- `pm_static.yml` / `pm_static_nrf54l15dk_nrf54l15_cpuapp.yml`：固定 Partition Manager memory layout。
+- `新固件/dfu_application.zip`：用于手机端 OTA 测试的新固件包。
+
+## 功能说明
+
+当前程序会周期性擦写外部 flash 的 `ido_storage_partition` 分区，并通过 BLE LBS 服务广播。
+
+按键低功耗逻辑：
+
+- Button0：进入低功耗空闲状态，主循环停止，BLE 停止广播，已有连接会断开，外部 flash 进入 DPD，SPI 外设进入 suspend。
+- Button1：退出低功耗空闲状态，恢复 SPI 和外部 flash，重新开始 BLE 广播，主循环继续运行。
+
+## OTA 说明
+
+本工程的 OTA secondary slot 位于外部 SPI NOR flash。手机端通过 MCUmgr Bluetooth SMP 传输新固件，应用侧 MCUmgr 写入外部 flash，复位后由 MCUboot 完成镜像升级。
+
+`新固件/dfu_application.zip` 是已经生成好的测试 OTA 包，可以直接使用 nRF Connect 或 nRF Device Manager 进行升级测试。
 
 ## MCUboot 配置域说明
 
@@ -18,61 +35,25 @@ NCS 使用 sysbuild 时，应用和 MCUboot 是两个不同的配置域：
 
 - 应用配置域：`prj.conf`
 - MCUboot 配置域：`sysbuild/mcuboot/prj.conf`
-- MCUboot overlay：`sysbuild/mcuboot/app.overlay`
+- MCUboot overlay：`sysbuild/mcuboot/app.overlay` 和 `sysbuild/mcuboot/boards/*.overlay`
 
-不要把 MCUboot 专用 Kconfig 配置随意放到应用 `prj.conf` 中，也不要在 MCUboot 配置域中加入未确认用途的宏。MCUboot 的 slot、签名、swap、启动地址、镜像校验等配置会直接影响启动和 OTA 行为，修改前必须确认该配置的作用和影响。
+不要把 MCUboot 专用 Kconfig 配置随意放到应用 `prj.conf` 中。MCUboot 的 slot、签名、swap、启动地址、镜像校验等配置会直接影响启动和 OTA 行为，修改前需要确认该配置的作用和影响。
 
-## 与 NCS3.3.0/lbs_OTA 的 MCUboot 配置差异
+## 外部 Flash 关键配置
 
-参考工程：
-
-https://github.com/Davidduan1987/ota_example/tree/NCS3.3.0/lbs_OTA
-
-主要差异如下：
-
-- `NCS3.3.0/lbs_OTA` 的 MCUboot 配置更偏向 NCS 3.3.0 默认示例配置，`sysbuild/mcuboot/prj.conf` 中包含日志裁剪、picolibc、LTO、boot banner 等配置。
-- 当前 `NCS3.2.X` 分支面向 NCS 3.2.x 工程验证，MCUboot 配置保持在当前可运行状态，不额外添加未验证的启动、swap、签名或 slot 相关宏。
-- `NCS3.3.0/lbs_OTA` 中曾通过 MCUboot overlay 处理 bootloader 代码分区；当前分支保留当前工程可运行配置，不建议在未验证前直接照搬 NCS 3.3.0 分支的 MCUboot 配置。
-- 两个分支都使用 sysbuild 管理 MCUboot 子镜像，但 NCS 版本不同，MCUboot 默认 Kconfig、Partition Manager 行为和板级 DTS 默认值可能存在差异，不能简单逐行复制。
-
-## 固件版本修改方法
-
-固件版本在工程根目录 `VERSION` 文件中修改：
+应用侧需要启用 SPI NOR 和 flash map：
 
 ```text
-VERSION_MAJOR = 1
-VERSION_MINOR = 0
-PATCHLEVEL = 0
-VERSION_TWEAK = 0
-EXTRAVERSION =
+CONFIG_FLASH=y
+CONFIG_FLASH_MAP=y
+CONFIG_FLASH_PAGE_LAYOUT=y
+CONFIG_SPI=y
+CONFIG_SPI_NOR=y
+CONFIG_SPI_NOR_SFDP_DEVICETREE=y
+CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE=4096
 ```
 
-例如要升级到 `1.0.1`，修改为：
-
-```text
-VERSION_MAJOR = 1
-VERSION_MINOR = 0
-PATCHLEVEL = 1
-VERSION_TWEAK = 0
-EXTRAVERSION =
-```
-
-修改版本后建议删除旧 `build` 目录并重新构建，确保 `dfu_application.zip` 中的镜像版本是新版本。
-
-## pm_static.yml 节点说明
-
-当前工程使用 `pm_static.yml` 固定 Partition Manager 的 memory layout。各节点作用如下：
-
-- `mcuboot`：MCUboot bootloader 所在区域，设备复位后先从这里运行 bootloader。
-- `EMPTY_0`：`mcuboot` 和 primary slot 之间的填充区域，用于保持静态分区布局连续，避免 Partition Manager 识别出多个未定义 gap。
-- `mcuboot_pad`：MCUboot image header 预留区，位于 primary slot 开始处，应用实际代码从该区域之后开始。
-- `app`：应用程序实际链接和运行的 flash 区域。
-- `mcuboot_primary`：MCUboot primary slot，包含 `mcuboot_pad` 和 `app`，当前正在运行的应用镜像位于该 slot。
-- `mcuboot_primary_app`：primary slot 中不含 `mcuboot_pad` 的应用区域，对应应用本体。
-- `mcuboot_secondary`：MCUboot secondary slot，OTA 新固件下载后先写入该区域，再由 MCUboot 完成升级切换。
-- `EMPTY_1`：secondary slot 和 settings 区域之间的填充区域，用于固定 flash layout 并保持分区连续。
-- `settings_storage`：Zephyr settings/持久化存储区域，BLE bonding、MCUmgr/DFU 相关状态等可保存在这里。
-- `sram_primary`：ARM application core 使用的 SRAM 区域，当前配置为 `0x20000000-0x20040000`，即 256 KB。
+应用侧和 MCUboot 侧都需要保证外部 flash devicetree 配置一致，否则 OTA 写入 external secondary slot 时可能失败。
 
 ## 构建命令
 
@@ -95,13 +76,11 @@ nrfutil toolchain-manager launch --ncs-version v3.2.1 -- west flash -d "C:\ncs\v
 
 ## OTA 注意事项
 
-如果 OTA 时手机端 APP 进度直接到 `100%`，但设备端固件没有升级，通常说明新固件包生成有问题，而不是手机端传输流程真正完成升级。
+如果 OTA 时手机端 APP 进度直接到 `100%`，但设备端固件没有升级，通常说明新固件包生成或版本号配置有问题，而不是手机端传输流程真正完成升级。
 
 常见处理方式：
 
 1. 删除工程原始 `build` 文件夹。
-2. 重新 pristine build。
-3. 使用重新生成的 `build/dfu_application.zip` 做 OTA。
-4. 确认 `VERSION` 文件中的版本号比设备当前运行版本更新。
-
-当前工程中的 `新固件` 文件夹已经包含一个可用于 OTA 升级测试的 `dfu_application.zip`，可以直接用手机端 APP 选择该文件进行升级验证。
+2. 修改 `VERSION` 文件，确保新固件版本号高于设备当前运行版本。
+3. 重新 pristine build。
+4. 使用重新生成的 `build/dfu_application.zip` 做 OTA。

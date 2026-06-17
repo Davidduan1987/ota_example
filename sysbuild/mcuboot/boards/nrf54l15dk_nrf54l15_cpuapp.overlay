@@ -1,3 +1,16 @@
+// To get started, press Ctrl+Space to bring up the completion menu and view the available nodes.
+
+// You can also use the buttons in the sidebar to perform actions on nodes.
+// Actions currently available include:
+
+// * Enabling / disabling the node
+// * Adding the bus to a bus
+// * Removing the node
+// * Connecting ADC channels
+
+// For more help, browse the DeviceTree documentation at https://docs.zephyrproject.org/latest/guides/dts/index.html
+// You can also visit the nRF DeviceTree extension documentation at https://docs.nordicsemi.com/bundle/nrf-connect-vscode/page/guides/ncs_configure_app.html#devicetree-support-in-the-extension
+
 &cpuapp_rram {
     reg = <0x0 DT_SIZE_K(1524)>;
 };
@@ -6,4 +19,22 @@
     reg = <0x20000000 DT_SIZE_K(256)>;
     ranges = <0x0 0x20000000  0x40000>;
 };
+
+
+/* STEP 2.2 - Add external flash to MCUboot */
+&mx25r64 {
+	status = "okay";
+};
+
+/ {
+    chosen {
+        nordic,pm-ext-flash = &mx25r64;
+    };
+};
+
+
+
+
+
+
 
