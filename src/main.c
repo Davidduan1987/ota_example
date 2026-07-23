@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
 #include <bluetooth/services/lbs.h>
 
 LOG_MODULE_REGISTER(spi_flash_test, LOG_LEVEL_INF);
@@ -28,8 +29,8 @@ LOG_MODULE_REGISTER(spi_flash_test, LOG_LEVEL_INF);
 #define FLASH_WRITE_LEN 16
 #define FLASH_TEST_ERASE_SIZE 4096
 //#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME "OLD_TST"
-//#define DEVICE_NAME "NEW_OTA"
+//#define DEVICE_NAME "OLD_TST"
+#define DEVICE_NAME "NEW_OTA"
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define EXT_FLASH_NODE DT_NODELABEL(mx25r64)
 #define EXT_SPI_NODE DT_BUS(EXT_FLASH_NODE)
@@ -375,6 +376,10 @@ static int bluetooth_init(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
 	}
 
 	err = bt_lbs_init(&lbs_callbacks);

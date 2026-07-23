@@ -1,6 +1,5 @@
 / {
 	chosen {
 		zephyr,code-partition = &boot_partition;
-		nordic,pm-ext-flash = &ext_flash;
 	};
 };

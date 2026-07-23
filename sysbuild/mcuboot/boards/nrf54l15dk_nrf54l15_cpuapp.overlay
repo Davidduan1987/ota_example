@@ -11,8 +11,33 @@
 // For more help, browse the DeviceTree documentation at https://docs.zephyrproject.org/latest/guides/dts/index.html
 // You can also visit the nRF DeviceTree extension documentation at https://docs.nordicsemi.com/bundle/nrf-connect-vscode/page/guides/ncs_configure_app.html#devicetree-support-in-the-extension
 
+/ {
+    chosen {
+        zephyr,code-partition = &boot_partition;
+    };
+};
+
 &cpuapp_rram {
     reg = <0x0 DT_SIZE_K(1524)>;
+
+    partitions {
+        /delete-node/ partition@10000;
+        /delete-node/ partition@c2000;
+
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        boot_partition: partition@0 {
+            label = "mcuboot";
+            reg = <0x00000000 0x00020000>;
+        };
+
+        slot0_partition: partition@20000 {
+            label = "image-0";
+            reg = <0x00020000 0x00128000>;
+        };
+    };
 };
 
 &cpuapp_sram {
@@ -20,16 +45,21 @@
     ranges = <0x0 0x20000000  0x40000>;
 };
 
-
-/* STEP 2.2 - Add external flash to MCUboot */
+/* External flash for MCUboot secondary slot */
 &mx25r64 {
 	status = "okay";
-};
+	t-reset-recovery = <100000>;
 
-/ {
-    chosen {
-        nordic,pm-ext-flash = &mx25r64;
-    };
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x00000000 0x00128000>;
+		};
+	};
 };
 
 
