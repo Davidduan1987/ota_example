@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
 #include <bluetooth/services/lbs.h>
 
 LOG_MODULE_REGISTER(spi_flash_test, LOG_LEVEL_INF);
@@ -375,6 +376,10 @@ static int bluetooth_init(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
 	}
 
 	err = bt_lbs_init(&lbs_callbacks);

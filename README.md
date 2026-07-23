@@ -74,6 +74,30 @@ nrfutil toolchain-manager launch --ncs-version v3.2.1 -- west build -b nrf54l15d
 nrfutil toolchain-manager launch --ncs-version v3.2.1 -- west flash -d "C:\ncs\v3.2.1\prj\lbs_v32\build" --erase
 ```
 
+## 已知问题修复：BLE 广播启动失败（err -11 / EAGAIN）
+
+现象：设备启动后 BLE 广播一直报 `Advertising failed to start (err -11)`，扫不到任何广播。
+
+根因：工程开启了 `CONFIG_BT_SETTINGS=y`（BLE 绑定信息持久化），此时 Zephyr 的 `bt_init()` 在首次启动、设备还没有已保存的身份地址（ID address）时，会打印一行 `No ID address. App must call settings_load()` 后直接返回，**不会**设置 `BT_DEV_READY` 标志位——它是故意等应用层调用 `settings_load()` 之后才由 settings 子系统补上这个标志。`bluetooth_init()` 里原来只调用了 `bt_enable(NULL)`，从未调用 `settings_load()`，导致 `BT_DEV_READY` 永远不会被置位，`bt_le_adv_start()` 因此必然返回 `-EAGAIN`（即 -11）。
+
+修复：在 `bt_enable()` 成功后补上 `settings_load()` 调用（`src/main.c` 的 `bluetooth_init()`）：
+
+```c
+err = bt_enable(NULL);
+if (err) {
+	printk("Bluetooth init failed (err %d)\n", err);
+	return err;
+}
+
+if (IS_ENABLED(CONFIG_SETTINGS)) {
+	settings_load();
+}
+
+err = bt_lbs_init(&lbs_callbacks);
+```
+
+同时需要包含头文件 `#include <zephyr/settings/settings.h>`。
+
 ## OTA 注意事项
 
 如果 OTA 时手机端 APP 进度直接到 `100%`，但设备端固件没有升级，通常说明新固件包生成或版本号配置有问题，而不是手机端传输流程真正完成升级。
